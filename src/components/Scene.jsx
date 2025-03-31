@@ -1,11 +1,16 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { setupEnvironmentMap } from '../utils/setupEnvironmentMap';
-import { loadModel } from '../utils/loadAssets';
+import { loadAssets } from '../utils/loadAssets';
+import LoadingBar from './LoadingBar';
+import gsap from 'gsap';
+import '../styles/LoadingBar.css';
 
 const Scene = () => {
   const mountRef = useRef(null)
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Scene setup
@@ -35,7 +40,27 @@ const Scene = () => {
     mountRef?.current?.appendChild(renderer.domElement)
 
     //load assets
-    loadModel(scene, './models/Stairs.FBX')
+    loadAssets(
+      scene,
+      (progress) => {
+        setLoadingProgress(progress);
+      },
+      () => {
+        setIsLoading(false);
+        // Fade out loading screen
+        gsap.to('.loading-container', {
+          opacity: 0,
+          duration: 1,
+          onComplete: () => {
+            // Remove loading screen from DOM after fade out
+            const loadingContainer = document.querySelector('.loading-container');
+            if (loadingContainer) {
+              loadingContainer.style.display = 'none';
+            }
+          }
+        });
+      }
+    )
 
     //controls
     const controls = new OrbitControls(camera, renderer.domElement)
@@ -57,11 +82,8 @@ const Scene = () => {
 
     // Animation function
     const animate = () => {
-      
       controls.update()
-      
       renderer.render(scene, camera)
-
       requestAnimationFrame(animate)
     }
     animate()
@@ -72,7 +94,12 @@ const Scene = () => {
     }
   }, [])
 
-  return <div ref={mountRef}></div>
+  return (
+    <>
+      {isLoading && <LoadingBar progress={loadingProgress} />}
+      <div ref={mountRef}></div>
+    </>
+  )
 }
 
 export default Scene
