@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
-import { createCube } from '../utils/createCube'
+import { setupEnvironmentMap } from '../utils/setupEnvironmentMap';
+import { loadModel } from '../utils/loadAssets';
 
 const Scene = () => {
   const mountRef = useRef(null)
@@ -11,24 +12,17 @@ const Scene = () => {
     const scene = new THREE.Scene()
 
     //environment map
-    const cubeTextureLoader = new THREE.CubeTextureLoader()
-    const environmentMap = cubeTextureLoader.load([
-      './textures/Standard-Cube-Map/px.png', // positive x
-      './textures/Standard-Cube-Map/nx.png', // negative x
-      './textures/Standard-Cube-Map/py.png', // positive y
-      './textures/Standard-Cube-Map/ny.png', // negative y
-      './textures/Standard-Cube-Map/pz.png', // positive z
-      './textures/Standard-Cube-Map/nz.png'  // negative z
-    ])
-    // Set the scene's environment map
-    scene.environment = environmentMap
-    // Optional: Also use it as background
-    scene.background = environmentMap
+    setupEnvironmentMap(scene)
+
     //Sizes
     const sizes = {
       width: window.innerWidth,
       height: window.innerHeight
     }
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 5)
+    scene.add(ambientLight)
 
     //Camera
     const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
@@ -40,9 +34,8 @@ const Scene = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     mountRef?.current?.appendChild(renderer.domElement)
 
-    // Create a cube
-    const cube = createCube()
-    scene.add(cube)
+    //load assets
+    loadModel(scene, './models/Stairs.FBX')
 
     //controls
     const controls = new OrbitControls(camera, renderer.domElement)
